@@ -4,9 +4,11 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { APP_NAME } from "@sub-based-internet/shared/constants";
+import { Role } from "@sub-based-internet/shared/constants/enums";
 import { Button } from "@/components/ui/Button";
 import { Spinner } from "@/components/ui/Badge";
 import { useAuth } from "@/hooks/useAuth";
+import { homePathForUser } from "@/lib/auth-redirect";
 import styles from "@/css/dashboard.module.css";
 import { cn } from "@/script/cn";
 
@@ -26,12 +28,17 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!loading && !user) {
+    if (loading) return;
+    if (!user) {
       router.replace("/login");
+      return;
+    }
+    if (user.role === Role.PLATFORM_ADMIN) {
+      router.replace("/admin");
     }
   }, [loading, user, router]);
 
-  if (loading || !user) {
+  if (loading || !user || user.role === Role.PLATFORM_ADMIN) {
     return (
       <div className={styles.loadingWrap}>
         <Spinner />

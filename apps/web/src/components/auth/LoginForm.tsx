@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Alert } from "@/components/ui/Badge";
 import { useAuth } from "@/hooks/useAuth";
+import { homePathForUser } from "@/lib/auth-redirect";
 import styles from "@/css/login.module.css";
 
 export function LoginForm() {
@@ -19,7 +20,7 @@ export function LoginForm() {
   const [error, setError] = useState<string | null>(null);
 
   if (!loading && user) {
-    router.replace("/dashboard");
+    router.replace(homePathForUser(user));
     return null;
   }
 
@@ -28,8 +29,8 @@ export function LoginForm() {
     setSubmitting(true);
     setError(null);
     try {
-      await login(email, password);
-      router.push("/dashboard");
+      const loggedIn = await login(email, password);
+      router.push(homePathForUser(loggedIn));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Login failed");
     } finally {
@@ -65,6 +66,10 @@ export function LoginForm() {
           </Button>
         </form>
         <p className={styles.footer}>
+          <Link href="/forgot-password">Forgot password?</Link>
+          {" · "}
+          <Link href="/register">Create account</Link>
+          {" · "}
           <Link href="/">← Back to home</Link>
         </p>
       </div>

@@ -1,4 +1,4 @@
-{
+﻿{
   "name": "sub-based-internet",
   "private": true,
   "scripts": {
@@ -11,8 +11,12 @@
     "db:generate": "pnpm --filter @sub-based-internet/db generate",
     "db:studio": "pnpm --filter @sub-based-internet/db studio",
     "gateway:dev": "pnpm --filter @sub-based-internet/gateway-agent dev",
-    "test:e2e": "vitest run --config vitest.config.ts",
-    "test:e2e:watch": "vitest --config vitest.config.ts"
+    "test:e2e": "vitest run --config vitest.config.ts e2e",
+    "test:unit": "vitest run --config vitest.config.ts apps/api",
+    "test": "vitest run --config vitest.config.ts",
+    "test:e2e:watch": "vitest --config vitest.config.ts e2e",
+    "docker:prod": "docker compose -f docker-compose.prod.yml up --build",
+    "setup:windows": "powershell -ExecutionPolicy Bypass -File scripts/setup-windows.ps1"
   },
   "devDependencies": {
     "prettier": "^3.4.2",

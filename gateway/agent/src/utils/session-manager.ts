@@ -26,13 +26,26 @@ export class SessionManager {
     return reports;
   }
 
-  /** Mock usage increment for dev — real driver reads iface stats in production */
+  /** Mock usage increment for dev — real driver reads tc stats in production */
   simulateUsage() {
     for (const session of this.enforced.values()) {
       const current = this.usageCounters.get(session.sessionId) ?? { bytesIn: 0, bytesOut: 0 };
       this.usageCounters.set(session.sessionId, {
         bytesIn: current.bytesIn + 50_000,
         bytesOut: current.bytesOut + 25_000,
+      });
+    }
+  }
+
+  async collectUsageFromDriver() {
+    if (!this.driver.readUsage) return;
+    for (const session of this.enforced.values()) {
+      const usage = await this.driver.readUsage(session.macAddress);
+      if (!usage) continue;
+      const current = this.usageCounters.get(session.sessionId) ?? { bytesIn: 0, bytesOut: 0 };
+      this.usageCounters.set(session.sessionId, {
+        bytesIn: current.bytesIn + usage.bytesIn,
+        bytesOut: current.bytesOut + usage.bytesOut,
       });
     }
   }

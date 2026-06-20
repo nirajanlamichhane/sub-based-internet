@@ -33,13 +33,17 @@ X-Gateway-Key: <location.gatewayKey>
 | `GATEWAY_POLL_MS` | `30000` | Heartbeat + session sync interval |
 | `GATEWAY_USAGE_MS` | `300000` | Usage report interval |
 | `GATEWAY_FIRMWARE` | `1.0.0` | Reported firmware version |
+| `GATEWAY_LAN_DEV` | `br-lan` | OpenWRT LAN bridge interface for tc |
+| `GATEWAY_STATE_DIR` | `/tmp/wifi-saas` | MAC→classid map persistence |
+| `GATEWAY_DRY_RUN` | — | Set `1` to log script actions without executing |
+| `GATEWAY_FAIL_FAST` | — | Set `1` to exit on script errors (production) |
 
 ## Drivers
 
 | Driver | Implementation |
 |--------|----------------|
 | `MockDriver` | Logs ALLOW/BLOCK/SHAPE to stdout |
-| `OpenWrtDriver` | Calls `src/script/*.sh` for iptables + tc (stub on dev, real on device) |
+| `OpenWrtDriver` | Runs `init-iptables.sh` + `init-tc.sh` on start; `allow-mac.sh` / `block-mac.sh` / `shape-mac.sh` for enforcement; `read-usage.sh` reads tc byte counters |
 
 ## Offline Behavior
 
@@ -49,12 +53,16 @@ X-Gateway-Key: <location.gatewayKey>
 
 ## Captive Portal Redirect
 
-OpenWRT (CoovaChilli / nodogsplash) redirects unauthenticated clients to:
+OpenWRT (nodogsplash / CoovaChilli) redirects unauthenticated clients to:
 
 ```text
 https://{APP_URL}/portal/{locationSlug}?mac=$(mac)&ip=$(ip)
 ```
 
+**Full pilot guide:** [openwrt-venue-pilot.md](./openwrt-venue-pilot.md)
+
+Deploy templates: `deploy/gateway-agent.env.example`, `deploy/gateway-agent.procd`, `deploy/gateway-agent.service`
+
 ## Status
 
-- **Implemented** — task 006 (`gateway/agent/src/`)
+- **Implemented** — tasks 006, 009, 013 (`gateway/agent/src/` + pilot guide)

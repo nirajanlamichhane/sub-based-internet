@@ -45,6 +45,22 @@
       "types": "./dist/validators/gateway.d.ts",
       "default": "./dist/validators/gateway.js"
     },
+    "./validators/billing": {
+      "types": "./dist/validators/billing.d.ts",
+      "default": "./dist/validators/billing.js"
+    },
+    "./validators/portal-sms": {
+      "types": "./dist/validators/portal-sms.d.ts",
+      "default": "./dist/validators/portal-sms.js"
+    },
+    "./validators/nepal-payment": {
+      "types": "./dist/validators/nepal-payment.d.ts",
+      "default": "./dist/validators/nepal-payment.js"
+    },
+    "./constants/billing": {
+      "types": "./dist/constants/billing.d.ts",
+      "default": "./dist/constants/billing.js"
+    },
     "./types": {
       "types": "./dist/types/index.d.ts",
       "default": "./dist/types/index.js"

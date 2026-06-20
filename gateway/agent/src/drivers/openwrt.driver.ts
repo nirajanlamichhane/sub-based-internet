@@ -1,46 +1,216 @@
-import { execFile } from "child_process";
+﻿import { execFile } from "child_process";
+
 import { promisify } from "util";
+
 import { dirname, join } from "path";
+
 import { fileURLToPath } from "url";
+
 import type { GatewayDriver } from "../types/driver.js";
 
+
+
 const execFileAsync = promisify(execFile);
+
 const scriptDir = join(dirname(fileURLToPath(import.meta.url)), "../script");
 
-async function runScript(name: string, args: string[]): Promise<void> {
+
+
+function scriptEnv(): Record<string, string> {
+
+  const env: Record<string, string> = { ...process.env } as Record<string, string>;
+
+  if (process.env.GATEWAY_LAN_DEV) env.GATEWAY_LAN_DEV = process.env.GATEWAY_LAN_DEV;
+
+  if (process.env.GATEWAY_STATE_DIR) env.GATEWAY_STATE_DIR = process.env.GATEWAY_STATE_DIR;
+
+  return env;
+
+}
+
+
+
+async function runScript(name: string, args: string[] = []): Promise<string> {
+
   const scriptPath = join(scriptDir, name);
+
   if (process.env.GATEWAY_DRY_RUN === "1") {
+
     console.log(`[OpenWrtDriver] DRY-RUN ${name} ${args.join(" ")}`);
-    return;
+
+    return "";
+
   }
 
-  try {
-    const { stdout, stderr } = await execFileAsync("sh", [scriptPath, ...args], {
-      timeout: 10_000,
-    });
-    if (stdout.trim()) console.log(`[OpenWrtDriver] ${stdout.trim()}`);
-    if (stderr.trim()) console.warn(`[OpenWrtDriver] ${stderr.trim()}`);
-  } catch (err) {
-    console.warn(
-      `[OpenWrtDriver] Script ${name} failed (stub — run on OpenWRT device):`,
-      err instanceof Error ? err.message : err,
-    );
-  }
+
+
+  const { stdout, stderr } = await execFileAsync("sh", [scriptPath, ...args], {
+
+    timeout: 15_000,
+
+    env: scriptEnv(),
+
+  });
+
+
+
+  if (stderr.trim()) console.warn(`[OpenWrtDriver] ${stderr.trim()}`);
+
+  return stdout.trim();
+
 }
+
+
+
+function handleScriptError(name: string, err: unknown): never {
+
+  const msg = err instanceof Error ? err.message : String(err);
+
+  if (process.env.GATEWAY_FAIL_FAST === "1") {
+
+    throw new Error(`Script ${name} failed: ${msg}`);
+
+  }
+
+  console.warn(`[OpenWrtDriver] Script ${name} failed: ${msg}`);
+
+  return undefined as never;
+
+}
+
+
 
 /** OpenWRT driver — delegates to shell scripts for iptables + tc on device */
+
 export class OpenWrtDriver implements GatewayDriver {
+
   readonly name = "openwrt";
 
-  async allowMac(mac: string, speedMbps: number, ipAddress?: string | null): Promise<void> {
-    await runScript("allow-mac.sh", [mac, String(speedMbps), ipAddress ?? ""]);
+  private initialized = false;
+
+
+
+  async initialize(): Promise<void> {
+
+    if (this.initialized) return;
+
+    try {
+
+      await runScript("init-iptables.sh");
+
+      await runScript("init-tc.sh");
+
+      this.initialized = true;
+
+      console.log(
+
+        `[OpenWrtDriver] initialized on ${process.env.GATEWAY_LAN_DEV ?? "br-lan"}`,
+
+      );
+
+    } catch (err) {
+
+      handleScriptError("init", err);
+
+    }
+
   }
+
+
+
+  async allowMac(mac: string, speedMbps: number, ipAddress?: string | null): Promise<void> {
+
+    try {
+
+      const out = await runScript("allow-mac.sh", [mac, String(speedMbps), ipAddress ?? ""]);
+
+      if (out) console.log(`[OpenWrtDriver] ${out}`);
+
+    } catch (err) {
+
+      handleScriptError("allow-mac.sh", err);
+
+    }
+
+  }
+
+
 
   async blockMac(mac: string): Promise<void> {
-    await runScript("block-mac.sh", [mac]);
+
+    try {
+
+      const out = await runScript("block-mac.sh", [mac]);
+
+      if (out) console.log(`[OpenWrtDriver] ${out}`);
+
+    } catch (err) {
+
+      handleScriptError("block-mac.sh", err);
+
+    }
+
   }
 
+
+
   async updateSpeed(mac: string, speedMbps: number): Promise<void> {
-    await runScript("shape-mac.sh", [mac, String(speedMbps)]);
+
+    try {
+
+      const out = await runScript("shape-mac.sh", [mac, String(speedMbps)]);
+
+      if (out) console.log(`[OpenWrtDriver] ${out}`);
+
+    } catch (err) {
+
+      handleScriptError("shape-mac.sh", err);
+
+    }
+
   }
+
+
+
+  async readUsage(mac: string): Promise<{ bytesIn: number; bytesOut: number } | null> {
+
+    try {
+
+      const out = await runScript("read-usage.sh", [mac]);
+
+      if (!out) return null;
+
+      const parsed = JSON.parse(out) as { bytesIn?: number; bytesOut?: number };
+
+      return { bytesIn: parsed.bytesIn ?? 0, bytesOut: parsed.bytesOut ?? 0 };
+
+    } catch {
+
+      return null;
+
+    }
+
+  }
+
+
+
+  async shutdown(): Promise<void> {
+
+    try {
+
+      const out = await runScript("teardown.sh");
+
+      if (out) console.log(`[OpenWrtDriver] ${out}`);
+
+      this.initialized = false;
+
+    } catch (err) {
+
+      handleScriptError("teardown.sh", err);
+
+    }
+
+  }
+
 }
+

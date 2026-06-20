@@ -1,7 +1,9 @@
+import { randomBytes } from "crypto";
 import {
   ConflictException,
   Injectable,
   UnauthorizedException,
+  BadRequestException,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcryptjs";
@@ -14,11 +16,17 @@ import {
   loginSchema,
   refreshTokenSchema,
   registerSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
   type LoginInput,
   type RefreshTokenInput,
   type RegisterInput,
+  type ForgotPasswordInput,
+  type ResetPasswordInput,
 } from "@sub-based-internet/shared/validators/auth";
 import { env } from "../../config/env";
+import { MailService } from "../../common/mail/mail.service";
+import { RedisService } from "../../common/redis/redis.service";
 import { PrismaService } from "../../common/prisma/prisma.service";
 import type { AuthUser, JwtPayload } from "../../common/types/auth-user";
 
@@ -27,6 +35,8 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly redis: RedisService,
+    private readonly mail: MailService,
   ) {}
 
   async login(input: LoginInput) {
@@ -92,6 +102,45 @@ export class AuthService {
 
     const owner = tenant.users[0];
     return this.buildTokenResponse(owner);
+  }
+
+  async forgotPassword(input: ForgotPasswordInput) {
+    const data = forgotPasswordSchema.parse(input);
+    const user = await this.prisma.user.findUnique({ where: { email: data.email } });
+
+    if (!user) {
+      return { message: "If that email exists, a reset link was sent." };
+    }
+
+    const token = randomBytes(32).toString("hex");
+    await this.redis.setEx(`password-reset:${token}`, user.id, 3600);
+    const resetUrl = `${env.webUrl}/reset-password?token=${token}`;
+    await this.mail.sendPasswordReset(user.email, resetUrl);
+
+    const response: { message: string; resetUrl?: string } = {
+      message: "If that email exists, a reset link was sent.",
+    };
+    if (!env.smtpHost && !env.isProduction) {
+      response.resetUrl = resetUrl;
+    }
+    return response;
+  }
+
+  async resetPassword(input: ResetPasswordInput) {
+    const data = resetPasswordSchema.parse(input);
+    const userId = await this.redis.get(`password-reset:${data.token}`);
+    if (!userId) {
+      throw new BadRequestException("Invalid or expired reset token");
+    }
+
+    const passwordHash = await bcrypt.hash(data.password, 10);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash },
+    });
+    await this.redis.del(`password-reset:${data.token}`);
+
+    return { message: "Password updated. You can sign in now." };
   }
 
   private buildTokenResponse(user: {

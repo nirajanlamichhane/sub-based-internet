@@ -8,6 +8,7 @@ import { SessionManager } from "./session-manager.js";
 export class GatewayAgent {
   private readonly config: GatewayConfig;
   private readonly api: CloudApiClient;
+  private readonly driver: ReturnType<typeof createDriver>;
   private readonly sessions: SessionManager;
   private readonly cache = new OfflineCache();
   private pollTimer: ReturnType<typeof setInterval> | null = null;
@@ -16,9 +17,9 @@ export class GatewayAgent {
 
   constructor(config: GatewayConfig = loadConfig()) {
     this.config = config;
-    const driver = createDriver(config.driver);
+    this.driver = createDriver(config.driver);
     this.api = new CloudApiClient(config);
-    this.sessions = new SessionManager(driver);
+    this.sessions = new SessionManager(this.driver);
   }
 
   async start() {
@@ -27,6 +28,10 @@ export class GatewayAgent {
 
     console.log(`[GatewayAgent] driver=${this.config.driver} api=${this.config.apiUrl}`);
     console.log(`[GatewayAgent] gateway key ending ...${this.config.gatewayKey.slice(-6)}`);
+
+    if (this.driver.initialize) {
+      await this.driver.initialize();
+    }
 
     await this.pollOnce();
 
@@ -43,6 +48,13 @@ export class GatewayAgent {
     this.running = false;
     if (this.pollTimer) clearInterval(this.pollTimer);
     if (this.usageTimer) clearInterval(this.usageTimer);
+  }
+
+  async shutdown() {
+    this.stop();
+    if (this.driver.shutdown) {
+      await this.driver.shutdown();
+    }
   }
 
   private async pollOnce() {
@@ -81,6 +93,8 @@ export class GatewayAgent {
   private async reportUsage() {
     if (this.config.driver === "mock") {
       this.sessions.simulateUsage();
+    } else {
+      await this.sessions.collectUsageFromDriver();
     }
 
     const reports = this.sessions.drainUsageReports();
@@ -104,9 +118,9 @@ export async function runAgent() {
   const agent = new GatewayAgent();
   await agent.start();
 
-  const shutdown = () => {
+  const shutdown = async () => {
     console.log("[GatewayAgent] shutting down");
-    agent.stop();
+    await agent.shutdown();
     process.exit(0);
   };
 

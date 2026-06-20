@@ -1,0 +1,29 @@
+# HTTPS overlay — Caddy auto Let's Encrypt (replaces nginx)
+# Usage:
+#   Set DOMAIN=your-domain.com and ACME_EMAIL=you@email.com in .env
+#   docker compose -f docker-compose.prod.yml -f docker-compose.caddy.yml up -d
+
+services:
+  nginx:
+    profiles: ["disabled"]
+
+  caddy:
+    image: caddy:2.8-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+      ACME_EMAIL: ${ACME_EMAIL:-admin@example.com}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+      - web
+
+volumes:
+  caddy_data:
+  caddy_config:

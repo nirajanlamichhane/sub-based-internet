@@ -1,0 +1,15 @@
+[Unit]
+Description=Wi-Fi SaaS Gateway Agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+EnvironmentFile=/etc/wifi-saas/gateway.env
+WorkingDirectory=/opt/wifi-saas
+ExecStart=/usr/bin/node /opt/wifi-saas/gateway/agent/dist/index.js
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

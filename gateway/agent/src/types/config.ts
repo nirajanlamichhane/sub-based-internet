@@ -1,4 +1,4 @@
-export type GatewayDriverName = "mock" | "openwrt";
+﻿export type GatewayDriverName = "mock" | "openwrt" | "mikrotik";
 
 export interface GatewayConfig {
   apiUrl: string;
@@ -8,4 +8,5 @@ export interface GatewayConfig {
   usageReportIntervalMs: number;
   firmwareVersion: string;
   offlineGraceMs: number;
+  lanDev: string;
 }

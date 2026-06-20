@@ -11,8 +11,9 @@ import { ErrorView } from "./ErrorView";
 import { SuccessView } from "./SuccessView";
 import { TermsStep } from "./TermsStep";
 import { VoucherStep } from "./VoucherStep";
+import { SmsStep } from "./SmsStep";
 
-type Step = "terms" | "voucher" | "loading" | "success" | "error";
+type Step = "terms" | "voucher" | "sms" | "loading" | "success" | "error";
 
 export function PortalPage({ locationSlug }: { locationSlug: string }) {
   const searchParams = useSearchParams();
@@ -114,6 +115,21 @@ export function PortalPage({ locationSlug }: { locationSlug: string }) {
             onTokenChange={setToken}
             onMacChange={(v) => setMac(normalizeMac(v))}
             onSubmit={() => redeem(token)}
+            onSmsClick={() => setStep("sms")}
+          />
+        )}
+
+        {step === "sms" && (
+          <SmsStep
+            locationSlug={locationSlug}
+            macAddress={mac}
+            showMacInput={showMacInput}
+            ipAddress={queryIp || undefined}
+            onSuccess={(result) => {
+              setSession(result);
+              setStep("success");
+            }}
+            onBack={() => setStep("voucher")}
           />
         )}
 

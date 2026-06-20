@@ -179,4 +179,21 @@ describe("E2E happy path", () => {
     expect(gwSession).toBeDefined();
     expect(gwSession?.macAddress.toLowerCase()).toBe(TEST_MAC.toLowerCase());
   });
+
+  it("8. owner can view billing subscription", async () => {
+    const { status, data } = await api<{
+      plan: string;
+      planLabel: string;
+      licenseStatus: string;
+      locationCount: number;
+      stripeConfigured: boolean;
+    }>("/billing/subscription", { token: accessToken });
+
+    expectSuccess(status);
+    expect(data.plan).toBeTruthy();
+    expect(data.planLabel).toBeTruthy();
+    expect(data.licenseStatus).toBe("ACTIVE");
+    expect(data.locationCount).toBeGreaterThan(0);
+    expect(typeof data.stripeConfigured).toBe("boolean");
+  });
 });

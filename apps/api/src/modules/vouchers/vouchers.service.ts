@@ -28,6 +28,8 @@ import * as QRCode from "qrcode";
 
 import { RedisLockService } from "../../common/redis/redis-lock.service";
 
+import { LicenseService } from "../../common/license/license.service";
+
 import { PrismaService } from "../../common/prisma/prisma.service";
 import type { Prisma } from "@prisma/client";
 
@@ -42,6 +44,8 @@ export class VouchersService {
     private readonly prisma: PrismaService,
 
     private readonly redisLock: RedisLockService,
+
+    private readonly license: LicenseService,
 
   ) {}
 
@@ -208,6 +212,16 @@ export class VouchersService {
     if (voucher.location.slug !== data.locationSlug) {
 
       throw new BadRequestException("Voucher not valid for this location");
+
+    }
+
+
+
+    const license = await this.license.checkTenant(voucher.location.tenantId);
+
+    if (!license.allowSessions) {
+
+      throw new BadRequestException(license.message ?? "Venue license inactive");
 
     }
 

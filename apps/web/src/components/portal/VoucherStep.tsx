@@ -12,6 +12,7 @@ export function VoucherStep({
   onTokenChange,
   onMacChange,
   onSubmit,
+  onSmsClick,
 }: {
   token: string;
   macAddress: string;
@@ -20,6 +21,7 @@ export function VoucherStep({
   onTokenChange: (v: string) => void;
   onMacChange: (v: string) => void;
   onSubmit: () => void;
+  onSmsClick?: () => void;
 }) {
   return (
     <>
@@ -64,6 +66,14 @@ export function VoucherStep({
         {showMacInput
           ? "MAC not detected — enter manually for local testing"
           : "Your device has been identified automatically"}
+        {onSmsClick && (
+          <>
+            {" · "}
+            <button type="button" className={styles.linkButton} onClick={onSmsClick}>
+              Sign in with phone
+            </button>
+          </>
+        )}
       </p>
     </>
   );

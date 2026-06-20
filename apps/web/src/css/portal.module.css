@@ -81,6 +81,22 @@
   margin-top: 0.75rem;
 }
 
+.linkButton {
+  background: none;
+  border: none;
+  color: #2563eb;
+  cursor: pointer;
+  font-size: inherit;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.methodRow {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
 .successIcon {
   width: 4rem;
   height: 4rem;

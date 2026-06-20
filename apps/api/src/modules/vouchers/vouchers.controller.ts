@@ -68,6 +68,12 @@ export class VouchersController {
   }
 
   @Public()
+  @UseGuards(RateLimitGuard)
+  @RateLimit({
+    limit: env.redeemRateLimit,
+    windowSec: env.redeemRateWindowSec,
+    keyPrefix: "voucher-lookup",
+  })
   @Get(":token")
   findByToken(@Param("token") token: string) {
     return this.vouchersService.findByToken(token);

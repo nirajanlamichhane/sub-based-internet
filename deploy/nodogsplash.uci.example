@@ -1,0 +1,18 @@
+# OpenWRT UCI snippet — merge into /etc/config/nodogsplash
+# See output/architecture/openwrt-venue-pilot.md
+
+config nodogsplash
+    option enabled '1'
+    option gatewayinterface 'br-lan'
+    option redirecturl 'https://your-domain.com/portal/downtown-cafe?mac=$clientmac&ip=$clientip'
+    option maxclients '250'
+    option preauthidletimeout '3600'
+    option authidletimeout '86400'
+    option checkinterval '60'
+
+# After editing:
+#   /etc/init.d/nodogsplash restart
+#   /etc/init.d/nodogsplash enable
+
+# Walled garden — allow HTTPS to cloud before full auth (replace IP)
+# iptables -I nds_filter -p tcp -d YOUR_CLOUD_IP --dport 443 -j ACCEPT

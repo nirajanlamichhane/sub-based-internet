@@ -1,7 +1,9 @@
-import type { GatewayConfig, GatewayDriverName } from "../types/config.js";
+﻿import type { GatewayConfig, GatewayDriverName } from "../types/config.js";
 
 function parseDriver(value: string | undefined): GatewayDriverName {
-  return value === "openwrt" ? "openwrt" : "mock";
+  if (value === "openwrt") return "openwrt";
+  if (value === "mikrotik") return "mikrotik";
+  return "mock";
 }
 
 export function loadConfig(): GatewayConfig {
@@ -13,6 +15,7 @@ export function loadConfig(): GatewayConfig {
     usageReportIntervalMs: Number(process.env.GATEWAY_USAGE_MS ?? 300_000),
     firmwareVersion: process.env.GATEWAY_FIRMWARE ?? "1.0.0",
     offlineGraceMs: Number(process.env.GATEWAY_OFFLINE_GRACE_MS ?? 3_600_000),
+    lanDev: process.env.GATEWAY_LAN_DEV ?? "br-lan",
   };
 }
 

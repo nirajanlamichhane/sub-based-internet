@@ -32,6 +32,10 @@ Venue owner organization (SaaS customer).
 | name | string | Business name |
 | plan | SaaSPlan | Default STARTER |
 | licenseStatus | LicenseStatus | Default ACTIVE |
+| stripeCustomerId | string? | Stripe customer ID (unique) |
+| stripeSubscriptionId | string? | Stripe subscription ID (unique) |
+| subscriptionStatus | string? | Stripe status (active, past_due, …) |
+| currentPeriodEnd | datetime? | Billing period end from Stripe |
 | createdAt | datetime | Auto |
 | updatedAt | datetime | Auto |
 

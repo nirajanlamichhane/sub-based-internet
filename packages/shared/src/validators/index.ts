@@ -10,3 +10,6 @@ export * from "./location";
 export * from "./wifi-plan";
 export * from "./voucher";
 export * from "./gateway";
+export * from "./billing";
+export * from "./portal-sms";
+export * from "./nepal-payment";

@@ -42,3 +42,5 @@ pnpm db:generate && pnpm db:migrate:deploy && pnpm db:seed
 pnpm dev          # terminal 1
 pnpm test:e2e     # terminal 2
 ```
+
+Re-verified 2026-06-20: all 7 E2E steps pass against live API on `:3001`.

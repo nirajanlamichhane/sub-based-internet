@@ -80,6 +80,20 @@ export interface RedeemResponse {
   speedMbps: number;
 }
 
+export interface SubscriptionInfo {
+  plan: string;
+  planLabel: string;
+  monthlyUsd: number;
+  features: string[];
+  licenseStatus: string;
+  locationLimit: number | null;
+  locationCount: number;
+  subscriptionStatus: string | null;
+  currentPeriodEnd: string | null;
+  stripeConfigured: boolean;
+  hasSubscription: boolean;
+}
+
 export interface VoucherLookup {
   id: string;
   token: string;

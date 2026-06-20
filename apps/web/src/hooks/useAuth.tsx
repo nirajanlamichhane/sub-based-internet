@@ -10,12 +10,12 @@ import {
 } from "react";
 import type { UserDto } from "@sub-based-internet/shared/types";
 import { apiClient } from "@/lib/api-client";
-import { clearAuth, getStoredUser, setAuth } from "@/lib/auth-storage";
+import { clearAuth, getAccessToken, getStoredUser, setAuth } from "@/lib/auth-storage";
 
 interface AuthContextValue {
   user: UserDto | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<UserDto>;
   logout: () => void;
 }
 
@@ -26,7 +26,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setUser(getStoredUser());
+    const storedUser = getStoredUser();
+    const token = getAccessToken();
+    if (storedUser && !token) {
+      clearAuth();
+      setUser(null);
+    } else {
+      setUser(storedUser);
+    }
     setLoading(false);
   }, []);
 
@@ -34,6 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const res = await apiClient.auth.login(email, password);
     setAuth(res.accessToken, res.refreshToken, res.user);
     setUser(res.user);
+    return res.user;
   }, []);
 
   const logout = useCallback(() => {

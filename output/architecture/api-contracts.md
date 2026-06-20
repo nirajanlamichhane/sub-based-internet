@@ -114,6 +114,15 @@ Base URL: `http://localhost:3001` (dev)
 | GET | `/reports/overview` | JWT + Tenant | Dashboard summary |
 | GET | `/reports/sessions` | JWT + Tenant | Session stats by hour/plan |
 
+## Billing (Stripe)
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/billing/subscription` | JWT + Tenant | Current plan, license, Stripe status |
+| POST | `/billing/checkout` | JWT + Tenant | Stripe Checkout → `{ url }` |
+| POST | `/billing/portal` | JWT + Tenant | Customer Portal → `{ url }` |
+| POST | `/billing/webhook` | Stripe signature | Subscription lifecycle events |
+
 ## Health
 
 | Method | Path | Auth | Description |
@@ -134,4 +143,4 @@ Base URL: `http://localhost:3001` (dev)
 
 ## Status
 
-- **Implemented** — task 003 (NestJS modules in `apps/api/src/modules/`)
+- **Implemented** — tasks 003, 011 (NestJS modules in `apps/api/src/modules/`)

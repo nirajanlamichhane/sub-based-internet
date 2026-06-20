@@ -42,12 +42,17 @@ model Tenant {
   name          String
   plan          SaaSPlan      @default(STARTER)
   licenseStatus LicenseStatus @default(ACTIVE)
+  stripeCustomerId      String?   @unique
+  stripeSubscriptionId  String?   @unique
+  subscriptionStatus    String?
+  currentPeriodEnd      DateTime?
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
   locations Location[]
   users     User[]
   auditLogs AuditLog[]
+  payments  Payment[]
 }
 
 model Location {
@@ -154,4 +159,21 @@ model AuditLog {
 
   @@index([tenantId])
   @@index([createdAt])
+}
+
+model Payment {
+  id          String   @id @default(cuid())
+  tenantId    String
+  provider    String
+  amount      Decimal  @db.Decimal(10, 2)
+  plan        SaaSPlan
+  status      String   @default("pending")
+  externalRef String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([status])
 }

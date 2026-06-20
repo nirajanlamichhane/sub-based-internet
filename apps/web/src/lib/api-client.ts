@@ -1,4 +1,4 @@
-import { getAccessToken } from "./auth-storage";
+import { getAccessToken, getRefreshToken, setAuth, clearAuth } from "./auth-storage";
 import type {
   AuthResponse,
   LocationRecord,
@@ -6,14 +6,64 @@ import type {
   RedeemResponse,
   SessionStatsReport,
   SessionWithRelations,
+  SubscriptionInfo,
   VoucherLookup,
   VoucherWithRelations,
   WifiPlanWithLocation,
 } from "@/types/auth";
+import type { TenantRecord } from "@/types/admin";
+
+export interface NepalPaymentInitResponse {
+  provider: "esewa" | "khalti";
+  paymentId: string;
+  plan: string;
+  amount: number;
+  formUrl?: string;
+  formData?: Record<string, string | number>;
+  khaltiPublicKey?: string;
+  verifyEndpoint?: string;
+  returnUrl?: string;
+}
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
 
-type FetchOptions = RequestInit & { auth?: boolean };
+type FetchOptions = RequestInit & { auth?: boolean; _retried?: boolean };
+
+let refreshInFlight: Promise<boolean> | null = null;
+
+async function refreshAccessToken(): Promise<boolean> {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) return false;
+
+  if (!refreshInFlight) {
+    refreshInFlight = (async () => {
+      try {
+        const res = await fetch(`${API_URL}/auth/refresh`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ refreshToken }),
+        });
+        if (!res.ok) return false;
+        const data = (await res.json()) as AuthResponse;
+        setAuth(data.accessToken, data.refreshToken, data.user);
+        return true;
+      } catch {
+        return false;
+      } finally {
+        refreshInFlight = null;
+      }
+    })();
+  }
+
+  return refreshInFlight;
+}
+
+function forceLoginRedirect() {
+  clearAuth();
+  if (typeof window !== "undefined") {
+    window.location.href = "/login";
+  }
+}
 
 async function parseError(res: Response): Promise<string> {
   try {
@@ -39,6 +89,15 @@ async function fetchJson<T>(path: string, init?: FetchOptions): Promise<T> {
   }
 
   const res = await fetch(`${API_URL}${path}`, { ...init, headers });
+
+  if (res.status === 401 && init?.auth !== false && !init?._retried) {
+    const refreshed = await refreshAccessToken();
+    if (refreshed) {
+      return fetchJson<T>(path, { ...init, _retried: true });
+    }
+    forceLoginRedirect();
+  }
+
   if (!res.ok) throw new Error(await parseError(res));
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
@@ -69,6 +128,18 @@ export const apiClient = {
       fetchJson<AuthResponse>("/auth/register", {
         method: "POST",
         body: JSON.stringify({ tenantName, email, password }),
+        auth: false,
+      }),
+    forgotPassword: (email: string) =>
+      fetchJson<{ message: string; resetUrl?: string }>("/auth/forgot-password", {
+        method: "POST",
+        body: JSON.stringify({ email }),
+        auth: false,
+      }),
+    resetPassword: (token: string, password: string) =>
+      fetchJson<{ message: string }>("/auth/reset-password", {
+        method: "POST",
+        body: JSON.stringify({ token, password }),
         auth: false,
       }),
   },
@@ -129,6 +200,22 @@ export const apiClient = {
     sessions: () => fetchJson<SessionStatsReport>("/reports/sessions"),
   },
 
+  tenants: {
+    list: () => fetchJson<TenantRecord[]>("/tenants"),
+    create: (data: {
+      name: string;
+      plan?: string;
+      licenseStatus?: string;
+      ownerEmail?: string;
+      ownerPassword?: string;
+    }) => fetchJson<TenantRecord>("/tenants", { method: "POST", body: JSON.stringify(data) }),
+    update: (id: string, data: { name?: string; plan?: string; licenseStatus?: string }) =>
+      fetchJson<TenantRecord>(`/tenants/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
+  },
+
   portal: {
     lookupVoucher: (token: string) =>
       fetchJson<VoucherLookup>(`/vouchers/${encodeURIComponent(token)}`, { auth: false }),
@@ -142,6 +229,46 @@ export const apiClient = {
         method: "POST",
         body: JSON.stringify(data),
         auth: false,
+      }),
+    sendSms: (phone: string, locationSlug: string) =>
+      fetchJson<{ message: string; devCode?: string }>("/portal/sms/send", {
+        method: "POST",
+        body: JSON.stringify({ phone, locationSlug }),
+        auth: false,
+      }),
+    verifySms: (data: {
+      phone: string;
+      code: string;
+      locationSlug: string;
+      macAddress: string;
+      ipAddress?: string;
+    }) =>
+      fetchJson<RedeemResponse>("/portal/sms/verify", {
+        method: "POST",
+        body: JSON.stringify(data),
+        auth: false,
+      }),
+  },
+
+  billing: {
+    getSubscription: () =>
+      fetchJson<SubscriptionInfo>("/billing/subscription"),
+    checkout: (plan: string) =>
+      fetchJson<{ url: string }>("/billing/checkout", {
+        method: "POST",
+        body: JSON.stringify({ plan }),
+      }),
+    portal: () =>
+      fetchJson<{ url: string }>("/billing/portal", { method: "POST" }),
+    nepalInitiate: (plan: string, provider: "esewa" | "khalti") =>
+      fetchJson<NepalPaymentInitResponse>("/billing/nepal/initiate", {
+        method: "POST",
+        body: JSON.stringify({ plan, provider }),
+      }),
+    nepalVerifyKhalti: (token: string, amount: number, paymentId: string) =>
+      fetchJson<{ message: string; plan: string }>("/billing/nepal/khalti/verify", {
+        method: "POST",
+        body: JSON.stringify({ token, amount, paymentId }),
       }),
   },
 };

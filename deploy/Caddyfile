@@ -1,0 +1,31 @@
+# Automatic HTTPS with Caddy — set DOMAIN in .env
+# Usage: docker compose -f docker-compose.prod.yml -f docker-compose.caddy.yml up -d
+
+{$DOMAIN} {
+	encode gzip
+
+	handle /health {
+		reverse_proxy api:3001
+	}
+
+	handle /auth/* {
+		reverse_proxy api:3001
+	}
+
+	handle /billing/* {
+		reverse_proxy api:3001
+	}
+
+	handle /portal/sms/* {
+		reverse_proxy api:3001
+	}
+
+	@api path /locations* /wifi-plans* /vouchers* /sessions* /gateway* /reports* /tenants* /jobs*
+	handle @api {
+		reverse_proxy api:3001
+	}
+
+	handle {
+		reverse_proxy web:3000
+	}
+}
