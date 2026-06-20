@@ -1,0 +1,19 @@
+﻿---
+description: Mandatory folder layout for all apps
+globs: apps/**/*,packages/**/*,gateway/**/*
+alwaysApply: false
+---
+
+# Folder Structure
+
+Follow `rules/folder-structure.md`:
+
+- CSS -> `css/` (web)
+- Scripts -> `script/`
+- Types -> `types/` or `packages/shared/types/`
+- React components -> `components/{feature}/`
+- UI primitives -> `components/ui/`
+- NestJS modules -> `modules/{name}/`
+- Shared logic -> `packages/shared/` (never duplicate in apps)
+
+Pages in `app/` must be thin wrappers — logic in hooks and feature components.

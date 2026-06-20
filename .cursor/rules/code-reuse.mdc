@@ -1,0 +1,17 @@
+﻿---
+description: DRY policy — no duplicate code
+globs: **/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Code Reuse
+
+Follow `rules/code-reuse.md`:
+
+1. Search codebase before adding new code.
+2. Validators -> `packages/shared/validators/` (single Zod schema for web + API).
+3. API calls -> `apps/web/src/lib/api-client.ts` only.
+4. Constants/enums -> `packages/shared/constants/`.
+5. If same logic appears twice, extract before continuing.
+
+Never copy-paste validators, DTOs, or formatters between apps.

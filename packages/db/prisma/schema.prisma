@@ -1,0 +1,157 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SaaSPlan {
+  STARTER
+  BUSINESS
+  ENTERPRISE
+}
+
+enum LicenseStatus {
+  ACTIVE
+  GRACE
+  EXPIRED
+}
+
+enum Role {
+  OWNER
+  STAFF
+  PLATFORM_ADMIN
+}
+
+enum VoucherStatus {
+  ACTIVE
+  REDEEMED
+  EXPIRED
+}
+
+enum SessionStatus {
+  ACTIVE
+  EXPIRED
+  SUSPENDED
+}
+
+model Tenant {
+  id            String        @id @default(cuid())
+  name          String
+  plan          SaaSPlan      @default(STARTER)
+  licenseStatus LicenseStatus @default(ACTIVE)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  locations Location[]
+  users     User[]
+  auditLogs AuditLog[]
+}
+
+model Location {
+  id              String    @id @default(cuid())
+  tenantId        String
+  name            String
+  slug            String
+  gatewayKey      String    @unique
+  lastHeartbeatAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  tenant    Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  wifiPlans WifiPlan[]
+  vouchers  Voucher[]
+  sessions  WifiSession[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId])
+}
+
+model User {
+  id           String   @id @default(cuid())
+  tenantId     String?
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(STAFF)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+}
+
+model WifiPlan {
+  id           String   @id @default(cuid())
+  locationId   String
+  name         String
+  durationMins Int
+  speedMbps    Int
+  dataCapMb    Int?
+  deviceLimit  Int      @default(1)
+  price        Decimal  @default(0) @db.Decimal(10, 2)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  location Location  @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  vouchers Voucher[]
+
+  @@index([locationId])
+}
+
+model Voucher {
+  id          String        @id @default(cuid())
+  token       String        @unique
+  planId      String
+  locationId  String
+  status      VoucherStatus @default(ACTIVE)
+  expiresAt   DateTime
+  redeemedAt  DateTime?
+  redeemedMac String?
+  createdAt   DateTime      @default(now())
+
+  plan     WifiPlan      @relation(fields: [planId], references: [id], onDelete: Cascade)
+  location Location      @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  sessions WifiSession[]
+
+  @@index([locationId])
+  @@index([status])
+}
+
+model WifiSession {
+  id         String        @id @default(cuid())
+  voucherId  String?
+  locationId String
+  macAddress String
+  ipAddress  String?
+  speedMbps  Int
+  dataUsedMb Int           @default(0)
+  startedAt  DateTime      @default(now())
+  expiresAt  DateTime
+  status     SessionStatus @default(ACTIVE)
+
+  voucher  Voucher? @relation(fields: [voucherId], references: [id], onDelete: SetNull)
+  location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  @@index([locationId])
+  @@index([status])
+  @@index([macAddress])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  tenantId   String?
+  action     String
+  entityType String
+  entityId   String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([createdAt])
+}

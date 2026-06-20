@@ -1,0 +1,15 @@
+﻿---
+description: Core project governance — read rules before coding
+alwaysApply: true
+---
+
+# Project Governance
+
+Before writing any code, read the rules in `rules/`:
+
+- `rules/README.md` — index
+- `rules/folder-structure.md` — where files go
+- `rules/code-reuse.md` — no duplicate logic
+- `rules/documentation.md` — update `output/TASKS.md` for every task
+
+**Build gate:** No `apps/` code without a task doc in `output/`. Move task files between `pending/`, `in-progress/`, `completed/` and update `output/TASKS.md`.

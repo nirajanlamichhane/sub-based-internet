@@ -1,0 +1,25 @@
+{
+  "name": "sub-based-internet",
+  "private": true,
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "db:migrate": "pnpm --filter @sub-based-internet/db migrate",
+    "db:migrate:deploy": "pnpm --filter @sub-based-internet/db migrate:deploy",
+    "db:seed": "pnpm --filter @sub-based-internet/db seed",
+    "db:generate": "pnpm --filter @sub-based-internet/db generate",
+    "db:studio": "pnpm --filter @sub-based-internet/db studio",
+    "gateway:dev": "pnpm --filter @sub-based-internet/gateway-agent dev",
+    "test:e2e": "vitest run --config vitest.config.ts",
+    "test:e2e:watch": "vitest --config vitest.config.ts"
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2",
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "engines": { "node": ">=20" }
+}

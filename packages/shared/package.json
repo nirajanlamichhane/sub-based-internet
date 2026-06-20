@@ -1,0 +1,68 @@
+{
+  "name": "@sub-based-internet/shared",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./constants": {
+      "types": "./dist/constants/index.d.ts",
+      "default": "./dist/constants/index.js"
+    },
+    "./constants/enums": {
+      "types": "./dist/constants/enums.d.ts",
+      "default": "./dist/constants/enums.js"
+    },
+    "./validators": {
+      "types": "./dist/validators/index.d.ts",
+      "default": "./dist/validators/index.js"
+    },
+    "./validators/auth": {
+      "types": "./dist/validators/auth.d.ts",
+      "default": "./dist/validators/auth.js"
+    },
+    "./validators/voucher": {
+      "types": "./dist/validators/voucher.d.ts",
+      "default": "./dist/validators/voucher.js"
+    },
+    "./validators/location": {
+      "types": "./dist/validators/location.d.ts",
+      "default": "./dist/validators/location.js"
+    },
+    "./validators/tenant": {
+      "types": "./dist/validators/tenant.d.ts",
+      "default": "./dist/validators/tenant.js"
+    },
+    "./validators/wifi-plan": {
+      "types": "./dist/validators/wifi-plan.d.ts",
+      "default": "./dist/validators/wifi-plan.js"
+    },
+    "./validators/gateway": {
+      "types": "./dist/validators/gateway.d.ts",
+      "default": "./dist/validators/gateway.js"
+    },
+    "./types": {
+      "types": "./dist/types/index.d.ts",
+      "default": "./dist/types/index.js"
+    },
+    "./utils": {
+      "types": "./dist/utils/index.d.ts",
+      "default": "./dist/utils/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}
